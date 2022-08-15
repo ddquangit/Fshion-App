@@ -10,21 +10,21 @@ class Cart {
 
   add(item, id, qty = 1) {
     let storedItem = this.items[id];
-    
+
     if (!storedItem) {
       storedItem = this.items[id] = { item: item, qty: 0, price: 0 };
     }
-    
+
     storedItem.qty = storedItem.qty + qty;
     storedItem.price = parseFloat((storedItem.item.price * storedItem.qty).toFixed(2));
-    this.items[id]= storedItem;
+    this.items[id] = storedItem;
     this.totalQty = this.totalQty + qty;
     this.totalPrice = this.totalPrice + storedItem.item.price * qty;
     this.totalPrice = parseFloat(this.totalPrice.toFixed(2));
     return this
   }
 
-  generateModel(){
+  generateModel() {
     let newCart = new cartModel({
       items: this.items,
       totalQty: this.totalQty,
@@ -42,7 +42,7 @@ class Cart {
     this.totalPrice = this.totalPrice - this.items[id].item.price * subQty;
     this.totalPrice = parseFloat(this.totalPrice.toFixed(2))
     if (this.items[id].qty <= 0) {
-      delete this.items[id];
+      setTimeout(() => delete this.items[id], 3000);
     }
     return this
   }
