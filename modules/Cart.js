@@ -8,17 +8,19 @@ class Cart {
     this.userId = oldCart.userId || "";
   }
 
-  add(item, id) {
+  add(item, id, qty = 1) {
     let storedItem = this.items[id];
+    
     if (!storedItem) {
       storedItem = this.items[id] = { item: item, qty: 0, price: 0 };
     }
-    storedItem.qty++;
+    
+    storedItem.qty = storedItem.qty + qty;
     storedItem.price = parseFloat((storedItem.item.price * storedItem.qty).toFixed(2));
-    this.items[id]=storedItem
-    this.totalQty++;
-    this.totalPrice += storedItem.item.price;
-    this.totalPrice = parseFloat(this.totalPrice.toFixed(2))
+    this.items[id]= storedItem;
+    this.totalQty = this.totalQty + qty;
+    this.totalPrice = this.totalPrice + storedItem.item.price * qty;
+    this.totalPrice = parseFloat(this.totalPrice.toFixed(2));
     return this
   }
 
@@ -32,26 +34,16 @@ class Cart {
     return newCart
   }
 
-  decreaseQty(id) {
-    this.items[id].qty--;
-    this.items[id].price -= this.items[id].item.price;
-    this.items[id].price = parseFloat(this.items[id].price.toFixed(2))
-    this.totalQty--;
-    this.totalPrice -= this.items[id].item.price
+  decreaseQty(id, subQty = 1) {
+    this.items[id].qty = this.items[id].qty - subQty;
+    this.items[id].price = this.items[id].price - this.items[id].item.price * subQty;
+    this.items[id].price = parseFloat(this.items[id].price.toFixed(2));
+    this.totalQty = this.totalQty - subQty;
+    this.totalPrice = this.totalPrice - this.items[id].item.price * subQty;
     this.totalPrice = parseFloat(this.totalPrice.toFixed(2))
     if (this.items[id].qty <= 0) {
       delete this.items[id];
     }
-    return this
-  }
-
-  increaseQty(id) {
-    this.items[id].qty++;
-    this.items[id].price += this.items[id].item.price;
-    this.items[id].price = parseFloat(this.items[id].price.toFixed(2))
-    this.totalQty++;
-    this.totalPrice += this.items[id].item.price
-    this.totalPrice = parseFloat(this.totalPrice.toFixed(2))
     return this
   }
 

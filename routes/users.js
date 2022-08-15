@@ -107,7 +107,7 @@ router.get('/:userId/cart', ensureAuthenticated, function (req, res, next) {
 //POST cart
 router.post('/:userId/cart', ensureAuthenticated, function (req, res, next) {
   let userId = req.params.userId
-  let { productId, increase, decrease } = req.body
+  let { productId, decrease, qty } = req.body;
 
   Cart.getCartByUserId(userId, function (err, c) {
     if (err) return next(err)
@@ -119,67 +119,65 @@ router.post('/:userId/cart', ensureAuthenticated, function (req, res, next) {
         return res.status(201).json({ cart: resultCart })
       })
     }
-    Product.findById(productId, function (e, product) {
-      if (e) {
-        e.status = 406;
-        return next(e);
-      }
-      if (product) {
-        if (decrease) {
-          oldCart.decreaseQty(product.id);
-        } else if (increase) {
-          oldCart.increaseQty(product.id);
-        } else {
-          oldCart.add(product, product.id);
+    if (productId) {
+      Product.findById(productId, function (e, product) {
+        if (e) {
+          e.status = 406;
+          return next(e);
         }
-        let newCart = oldCart.generateModel()
-        Cart.updateCartByUserId(
-          userId,
-          newCart,
-          function (err, result) {
-            if (err) return next(err)
-            return res.status(200).json({ cart: result })
+        if (product) {
+          if (decrease) {
+            oldCart.decreaseQty(product.id, qty);
+          } else {
+            oldCart.add(product, product.id, qty);
+          }
+          let newCart = oldCart.generateModel()
+          Cart.updateCartByUserId(
+            userId,
+            newCart,
+            function (err, result) {
+              if (err) return next(err)
+              return res.status(200).json({ cart: result })
+            })
+        } else {
+          // apply variant
+          Variant.getVariantByID(productId, function (e, variant) {
+            if (e) {
+              e.status = 406;
+              return next(e);
+            }
+            if (variant) {
+              Product.getProductByID(variant.productID, function (e, p) {
+                let color = (variant.color) ? "- " + variant.color : "";
+                let size = (variant.size) ? "- " + variant.size : "";
+                variant.title = p.title + " " + color + size
+                variant.price = p.price
+                if (decrease) {
+                  oldCart.decreaseQty(variant.id, qty);
+                } else {
+                  oldCart.add(variant, variant.id, qty);
+                }
+                let newCart = oldCart.generateModel()
+                Cart.updateCartByUserId(
+                  userId,
+                  newCart,
+                  function (err, result) {
+                    if (err) return next(err)
+                    res.status(200).json({ cart: result })
+                  })
+              })
+            }
+            // no product and no variant find
+            else {
+              let err = new TypedError('/cart', 400, 'invalid_field', {
+                message: "invalid request body"
+              })
+              return next(err)
+            }
           })
-      } else {
-        // apply variant
-        Variant.getVariantByID(productId, function (e, variant) {
-          if (e) {
-            e.status = 406;
-            return next(e);
-          }
-          if (variant) {
-            Product.getProductByID(variant.productID, function (e, p) {
-              let color = (variant.color) ? "- " + variant.color : "";
-              let size = (variant.size) ? "- " + variant.size : "";
-              variant.title = p.title + " " + color + size
-              variant.price = p.price
-              if (decrease) {
-                oldCart.decreaseQty(variant.id);
-              } else if (increase) {
-                oldCart.increaseQty(variant.id);
-              } else {
-                oldCart.add(variant, variant.id);
-              }
-              let newCart = oldCart.generateModel()
-              Cart.updateCartByUserId(
-                userId,
-                newCart,
-                function (err, result) {
-                  if (err) return next(err)
-                  res.status(200).json({ cart: result })
-                })
-            })
-          }
-          // no product and no variant find
-          else {
-            let err = new TypedError('/cart', 400, 'invalid_field', {
-              message: "invalid request body"
-            })
-            return next(err)
-          }
-        })
-      }
-    })
+        }
+      })
+    }
   })
 })
 
