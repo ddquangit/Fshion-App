@@ -42,7 +42,7 @@ class Cart {
     this.totalPrice = this.totalPrice - this.items[id].item.price * subQty;
     this.totalPrice = parseFloat(this.totalPrice.toFixed(2))
     if (this.items[id].qty <= 0) {
-      delete this.items[id];
+      setTimeout(() => delete this.items[id], 3000);
     }
     return this
   }
